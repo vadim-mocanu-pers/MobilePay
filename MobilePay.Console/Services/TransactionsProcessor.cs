@@ -39,6 +39,14 @@ namespace MobilePay.Console.Services
                 return ConfigReader.GetIntAppSetting("TransactionDateIndex");
             }
         }
+        
+        private int TransactionPercentageFee
+        {
+            get
+            {
+                return ConfigReader.GetIntAppSetting("TransactionPercentageFee");
+            }
+        }
 
         public Dictionary<string, int> MerchantsDiscounts { get; set; } = new Dictionary<string, int>();
 
@@ -71,7 +79,23 @@ namespace MobilePay.Console.Services
 
         private double GetTransactionFee(string transactionMerchant, double transactionAmount)
         {
-            throw new NotImplementedException();
+            var transactionFee = Math.Round((double)(TransactionPercentageFee / 100) * transactionAmount);
+            var percentageFeeDiscount = GetPercentageFeeDiscount(transactionMerchant);
+            if (percentageFeeDiscount > 0)
+            {
+                var feeDiscount = Math.Round((double)(percentageFeeDiscount / 100) * transactionFee);
+                transactionFee = transactionFee - percentageFeeDiscount;
+            }
+
+            return transactionFee;
+        }
+
+        private double GetPercentageFeeDiscount(string transactionMerchant)
+        {
+            var percentageFeeDiscount = 0;
+            MerchantsDiscounts.TryGetValue(transactionMerchant, out percentageFeeDiscount);
+
+            return percentageFeeDiscount;
         }
     }
 }

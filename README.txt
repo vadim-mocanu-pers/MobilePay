@@ -1,3 +1,0 @@
-1. It was requested to implement console app I disagree that it is best solution, it is difficult to configure what merchant has discount, who is fixed fee and who doesn't have privileges.
-2. It was requested to get trasnaction from text file, one transaction by one, this will lead to performance issue of reading from file.
-3. It doesn't specified what kind of test should be covered with, that's why because Integration test are more valuable than Unit Test I covered functionality with Integration Tests.

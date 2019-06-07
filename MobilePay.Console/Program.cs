@@ -15,7 +15,6 @@ namespace MobilePay.Console
                 var transactionsFileName = "";
                 if (System.IO.File.Exists(transactionsFileName))
                 {
-
                     var discountsProcessor = new DiscountsProcessor();
                     discountsProcessor.Execute();
 
