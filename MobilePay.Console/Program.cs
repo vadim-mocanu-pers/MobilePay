@@ -15,8 +15,13 @@ namespace MobilePay.Console
                 var transactionsFileName = "";
                 if (System.IO.File.Exists(transactionsFileName))
                 {
-                    var processor = new TransactionsProcessor();
-                    processor.Execute(transactionsFileName);
+
+                    var discountsProcessor = new DiscountsProcessor();
+                    discountsProcessor.Execute();
+
+                    var transactionsProcessor = new TransactionsProcessor();
+                    transactionsProcessor.MerchantsDiscounts = discountsProcessor.MerchantsDiscounts;
+                    transactionsProcessor.Execute();
                 }
             }
             catch (Exception ex)

@@ -1,5 +1,6 @@
 ﻿using MobilePay.Console.Helpers;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -7,6 +8,14 @@ namespace MobilePay.Console.Services
 {
     public class TransactionsProcessor
     {
+        private string TransactionsFile
+        {
+            get
+            {
+                return ConfigReader.GetAppSetting("TransactionsFile");
+            }
+        }
+
         private int TransactionAmountIndex
         {
             get
@@ -30,10 +39,12 @@ namespace MobilePay.Console.Services
                 return ConfigReader.GetIntAppSetting("TransactionDateIndex");
             }
         }
-        
-        public void Execute(string fileName)
+
+        public Dictionary<string, int> MerchantsDiscounts { get; set; } = new Dictionary<string, int>();
+
+        public void Execute()
         {
-            using (StreamReader file = new StreamReader(fileName))
+            using (StreamReader file = new StreamReader(TransactionsFile))
             {
                 string transaction;
 
@@ -41,13 +52,12 @@ namespace MobilePay.Console.Services
                 {
                     try
                     {
-                        var stringHelper = new StringHelper();
-                        var transactionItems = stringHelper.Splitter(transaction);
+                        var transactionItems = StringHelper.Split(transaction);
                         var transactionDate = transactionItems.ElementAtOrDefault(TransactionDateIndex);
                         var transactionMerchant = transactionItems.ElementAtOrDefault(TransactionMerchantIndex);
                         var transactionAmount = transactionItems.ElementAtOrDefault(TransactionAmountIndex);
-                        var amount = ProcessTransactionAmount(transactionAmount);
-                        var transactionFee = GetTransactionFee(amount);
+                        var amount = StringHelper.ParseToDouble(transactionAmount);
+                        var transactionFee = GetTransactionFee(transactionMerchant, amount);
                         System.Console.WriteLine($"{transactionDate} {transactionMerchant} {transactionFee}");
                     }
                     catch (Exception ex)
@@ -59,20 +69,9 @@ namespace MobilePay.Console.Services
             }
         }
 
-        private double ProcessTransactionAmount(string transactionAmount)
+        private double GetTransactionFee(string transactionMerchant, double transactionAmount)
         {
-            double amount = 0;
-            if (!string.IsNullOrWhiteSpace(transactionAmount))
-            {
-                double.TryParse(transactionAmount, out amount);
-            }
-
-            return amount;
-        }
-
-        private double GetTransactionFee(double transactionAmount)
-        {
-
+            throw new NotImplementedException();
         }
     }
 }
