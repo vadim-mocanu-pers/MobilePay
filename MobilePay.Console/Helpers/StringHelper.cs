@@ -1,18 +1,23 @@
-﻿namespace MobilePay.Console.Helpers
+﻿
+using System;
+
+namespace MobilePay.Console.Helpers
 {
     public class StringHelper
     {
+        private static string[] stringSeparators = new string[] { " " };
+
         public static string[] Split(string initialString)
         {
-            return initialString.Split(' ');
+            return initialString.Split(stringSeparators, StringSplitOptions.RemoveEmptyEntries);
         }
 
-        public static double ParseToDouble(string transactionAmount)
+        public static decimal ParseToDecimal(string transactionAmount)
         {
-            double amount = 0;
+            decimal amount = 0;
             if (!string.IsNullOrWhiteSpace(transactionAmount))
             {
-                double.TryParse(transactionAmount, out amount);
+                decimal.TryParse(transactionAmount, out amount);
             }
 
             return amount;
@@ -27,6 +32,20 @@
             }
 
             return amount;
+        }
+
+        public static DateTime? ParseToDateTime(string transactionDate)
+        {
+            DateTime dateTime;
+            if (!string.IsNullOrWhiteSpace(transactionDate))
+            {
+                if(DateTime.TryParse(transactionDate, out dateTime))
+                {
+                    return dateTime;
+                }
+            }
+
+            return null;
         }
     }
 }

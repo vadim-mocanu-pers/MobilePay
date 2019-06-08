@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 namespace MobilePay.Console.Services
 {
@@ -37,15 +38,18 @@ namespace MobilePay.Console.Services
         {
             try
             {
-                string[] discountLines = System.IO.File.ReadAllLines(MerchantsDiscountsFile);
-                foreach (string line in discountLines)
+                if (File.Exists(MerchantsDiscountsFile))
                 {
-                    var discountItems = StringHelper.Split(line);
-                    var merchant = discountItems.ElementAtOrDefault(MerchantDiscountIndex);
-                    var discountValue = discountItems.ElementAtOrDefault(DiscountValueIndex);
-                    var discount = StringHelper.ParseToInt(discountValue);
+                    string[] discountLines = File.ReadAllLines(MerchantsDiscountsFile);
+                    foreach (string line in discountLines)
+                    {
+                        var discountItems = StringHelper.Split(line);
+                        var merchant = discountItems.ElementAtOrDefault(MerchantDiscountIndex);
+                        var discountValue = discountItems.ElementAtOrDefault(DiscountValueIndex);
+                        var discount = StringHelper.ParseToInt(discountValue);
 
-                    MerchantsDiscounts.Add(merchant, discount);
+                        MerchantsDiscounts.Add(merchant, discount);
+                    }
                 }
             }
             catch (Exception ex)

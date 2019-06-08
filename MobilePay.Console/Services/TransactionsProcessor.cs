@@ -40,18 +40,33 @@ namespace MobilePay.Console.Services
             }
         }
         
-        private int TransactionPercentageFee
+        private decimal TransactionPercentageFee
         {
             get
             {
                 return ConfigReader.GetIntAppSetting("TransactionPercentageFee");
             }
+        }    
+        
+        private int InvoiceFixedFee
+        {
+            get
+            {
+                return ConfigReader.GetIntAppSetting("InvoiceFixedFee");
+            }
         }
 
         public Dictionary<string, int> MerchantsDiscounts { get; set; } = new Dictionary<string, int>();
+        public List<string> MerchantsInvoiceFee { get; set; } = new List<string>();
 
         public void Execute()
         {
+            if (!File.Exists(TransactionsFile))
+            {
+                System.Console.WriteLine("Couldn't find the transaction.txt file.");
+                return;
+            }
+
             using (StreamReader file = new StreamReader(TransactionsFile))
             {
                 string transaction;
@@ -64,9 +79,10 @@ namespace MobilePay.Console.Services
                         var transactionDate = transactionItems.ElementAtOrDefault(TransactionDateIndex);
                         var transactionMerchant = transactionItems.ElementAtOrDefault(TransactionMerchantIndex);
                         var transactionAmount = transactionItems.ElementAtOrDefault(TransactionAmountIndex);
-                        var amount = StringHelper.ParseToDouble(transactionAmount);
+                        var amount = StringHelper.ParseToDecimal(transactionAmount);
                         var transactionFee = GetTransactionFee(transactionMerchant, amount);
-                        System.Console.WriteLine($"{transactionDate} {transactionMerchant} {transactionFee}");
+                        transactionFee += GetInvoiceFee(transactionMerchant, transactionDate);
+                        System.Console.WriteLine($"{transactionDate} {transactionMerchant.PadRight(9)} {transactionFee:0.00}");
                     }
                     catch (Exception ex)
                     {
@@ -77,25 +93,66 @@ namespace MobilePay.Console.Services
             }
         }
 
-        private double GetTransactionFee(string transactionMerchant, double transactionAmount)
+        private decimal GetTransactionFee(string transactionMerchant, decimal transactionAmount)
         {
-            var transactionFee = Math.Round((double)(TransactionPercentageFee / 100) * transactionAmount);
+            var transactionFee = Math.Round((TransactionPercentageFee / 100) * transactionAmount, 2, MidpointRounding.AwayFromZero);
             var percentageFeeDiscount = GetPercentageFeeDiscount(transactionMerchant);
             if (percentageFeeDiscount > 0)
             {
-                var feeDiscount = Math.Round((double)(percentageFeeDiscount / 100) * transactionFee);
-                transactionFee = transactionFee - percentageFeeDiscount;
+                var feeDiscount = Math.Round((percentageFeeDiscount / 100) * transactionFee, 2, MidpointRounding.AwayFromZero);
+                transactionFee = transactionFee - feeDiscount;
             }
 
             return transactionFee;
         }
 
-        private double GetPercentageFeeDiscount(string transactionMerchant)
+        private decimal GetPercentageFeeDiscount(string transactionMerchant)
         {
             var percentageFeeDiscount = 0;
             MerchantsDiscounts.TryGetValue(transactionMerchant, out percentageFeeDiscount);
-
+            
             return percentageFeeDiscount;
+        }
+
+        private int GetInvoiceFee(string transactionMerchant, string transactionDate)
+        {
+            try
+            {
+                var transactionMonth = GetTransactionMonth(transactionDate);
+                if (transactionMonth > 0)
+                {
+                    var key = transactionMerchant + transactionMonth;
+                    if (!MerchantsInvoiceFee.Contains(key))
+                    {
+                        MerchantsInvoiceFee.Add(key);
+                        return InvoiceFixedFee;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Add to log file or in database log table
+            }
+
+            return 0;
+        }
+
+        private int GetTransactionMonth(string transactionDate)
+        {
+            try
+            {
+                var dateTime = StringHelper.ParseToDateTime(transactionDate);
+                if (dateTime.HasValue)
+                {
+                    return dateTime.Value.Month;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Add to log file or in database log table
+            }
+
+            return 0;
         }
     }
 }

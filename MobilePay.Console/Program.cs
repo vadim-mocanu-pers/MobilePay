@@ -9,19 +9,16 @@ namespace MobilePay.Console
         {
             try
             {
-                System.Console.WriteLine("Press Y to start");
+                System.Console.WriteLine("Output:");
+
+                var discountsProcessor = new DiscountsProcessor();
+                discountsProcessor.Execute();
+
+                var transactionsProcessor = new TransactionsProcessor();
+                transactionsProcessor.MerchantsDiscounts = discountsProcessor.MerchantsDiscounts;
+                transactionsProcessor.Execute();
+
                 System.Console.ReadKey();
-
-                var transactionsFileName = "";
-                if (System.IO.File.Exists(transactionsFileName))
-                {
-                    var discountsProcessor = new DiscountsProcessor();
-                    discountsProcessor.Execute();
-
-                    var transactionsProcessor = new TransactionsProcessor();
-                    transactionsProcessor.MerchantsDiscounts = discountsProcessor.MerchantsDiscounts;
-                    transactionsProcessor.Execute();
-                }
             }
             catch (Exception ex)
             {
