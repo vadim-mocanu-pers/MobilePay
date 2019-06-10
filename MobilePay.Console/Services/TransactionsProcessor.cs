@@ -61,39 +61,71 @@ namespace MobilePay.Console.Services
 
         public void Execute()
         {
-            if (!File.Exists(TransactionsFile))
+            if (!ValidateFileExist())
             {
-                System.Console.WriteLine("Couldn't find the transaction.txt file.");
                 return;
             }
 
-            using (StreamReader file = new StreamReader(TransactionsFile))
+            var fileReader = GetFileReader();
+            string transaction;
+            while ((transaction = GetTransaction(fileReader)) != null)
             {
-                string transaction;
-
-                while ((transaction = file.ReadLine()) != null)
+                try
                 {
-                    try
-                    {
-                        var transactionItems = StringHelper.Split(transaction);
-                        var transactionDate = transactionItems.ElementAtOrDefault(TransactionDateIndex);
-                        var transactionMerchant = transactionItems.ElementAtOrDefault(TransactionMerchantIndex);
-                        var transactionAmount = transactionItems.ElementAtOrDefault(TransactionAmountIndex);
-                        var amount = StringHelper.ParseToDecimal(transactionAmount);
-                        var transactionFee = GetTransactionFee(transactionMerchant, amount);
-                        transactionFee += GetInvoiceFee(transactionMerchant, transactionDate);
-                        System.Console.WriteLine($"{transactionDate} {transactionMerchant.PadRight(9)} {transactionFee:0.00}");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Add to log file or in database log table
-                    }
+                    var output = BuildOutput(transaction);
+                    System.Console.WriteLine(output);
                 }
-                file.Close();
+                catch (Exception ex)
+                {
+                    // Add to log file or in database log table
+                }
             }
+
+            DestroyFileReader(fileReader);
         }
 
-        private decimal GetTransactionFee(string transactionMerchant, decimal transactionAmount)
+        protected internal virtual string BuildOutput(string transaction)
+        {
+            var transactionItems = StringHelper.Split(transaction);
+            var transactionDate = transactionItems.ElementAtOrDefault(TransactionDateIndex);
+            var transactionMerchant = transactionItems.ElementAtOrDefault(TransactionMerchantIndex);
+            var transactionAmount = transactionItems.ElementAtOrDefault(TransactionAmountIndex);
+            var amount = StringHelper.ParseToDecimal(transactionAmount);
+            var transactionFee = GetTransactionFee(transactionMerchant, amount);
+            transactionFee += GetInvoiceFee(transactionMerchant, transactionDate);
+
+            var output = $"{transactionDate} {transactionMerchant.PadRight(9)} {transactionFee:0.00}";
+            return output;
+        }
+
+        protected internal virtual bool ValidateFileExist()
+        {
+            if (!File.Exists(TransactionsFile))
+            {
+                System.Console.WriteLine("Couldn't find the transaction.txt file.");
+                return false;
+            }
+
+            return true;
+        }
+
+        protected internal virtual StreamReader GetFileReader()
+        {
+            return new StreamReader(TransactionsFile);
+        }
+        
+        protected internal virtual string GetTransaction(StreamReader fileReader)
+        {
+            return fileReader.ReadLine();
+        }
+
+        protected internal virtual void DestroyFileReader(StreamReader fileReader)
+        {
+            fileReader.Close();
+            fileReader.Dispose();
+        }
+
+        protected internal virtual decimal GetTransactionFee(string transactionMerchant, decimal transactionAmount)
         {
             var transactionFee = Math.Round((TransactionPercentageFee / 100) * transactionAmount, 2, MidpointRounding.AwayFromZero);
             var percentageFeeDiscount = GetPercentageFeeDiscount(transactionMerchant);
